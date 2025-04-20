@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NFC Scan</title>
+</head>
+<body>
+  <h2>Scan NFC Tag</h2>
+  <button onclick="scanNFC()">Start NFC Scan</button>
+
+  <script>
+    async function scanNFC() {
+      try {
+        const ndef = new NDEFReader();
+        await ndef.scan();
+
+        ndef.onreading = async (event) => {
+          const serial = event.serialNumber;
+          let data = '';
+
+          for (const record of event.message.records) {
+            const textDecoder = new TextDecoder(record.encoding || 'utf-8');
+            data += textDecoder.decode(record.data);
+          }
+
+          console.log("Serial Number:", serial);
+          console.log("NFC Data:", data);
+
+          // Send to server
+          await fetch('/receive-nfc-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ serial, data }),
+          });
+
+          alert("NFC data sent successfully!");
+        };
+      } catch (err) {
+        alert("NFC Scan Failed: " + err);
+      }
+    }
+  </script>
+</body>
+</html>
